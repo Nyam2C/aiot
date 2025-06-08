@@ -123,6 +123,7 @@ var GuaranteedSubscriber = function (queueName, topicName) {
                 subscriber.log('Already started subscriber for queue "' + subscriber.queueName + '" and ready to receive messages.');
             } else {
                 subscriber.log('Starting subscriber for queue: ' + subscriber.queueName);
+
                 try {
                     // Create a message subscriber
                     subscriber.messageSubscriber = subscriber.session.createMessageConsumer({
@@ -164,6 +165,7 @@ var GuaranteedSubscriber = function (queueName, topicName) {
                         subscriber.log('=== Ready to receive messages. ===');
                       }
                     });
+                    
                     // Define message received event listener
                     subscriber.messageSubscriber.on(solace.MessageConsumerEventName.MESSAGE, function (message) {
                         subscriber.log('Received message: "' + message.getBinaryAttachment() + '",' +
@@ -290,7 +292,7 @@ solace.SolclientFactory.init(factoryProps);
 solace.SolclientFactory.setLogLevel(solace.LogLevel.WARN);
 
 // create the consumer, specifying the name of the queue
-var subscriber = new GuaranteedSubscriber('Q.TAEHYUN2', 'tutorialssss');
+var subscriber = new GuaranteedSubscriber('CBUM', 'ruff/kings');
 
 // subscribe to messages on Solace PubSub+ Event Broker
 subscriber.run(process.argv);

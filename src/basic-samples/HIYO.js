@@ -18,16 +18,31 @@
  */
 
 /**
- * Solace Web Messaging API for JavaScript
- * Publishing Guaranteed messages on a Topic tutorial - Guaranteed publisher
- * Demonstrates sending persistent messages on a topic
+ * Solace Systems Node.js API
+ * Publish/Subscribe tutorial - Topic Publisher
+ * Demonstrates publishing direct messages to a topic
  */
 
-/*jslint es6 browser devel:true*/
-/*global solace*/
+/*jslint es6 node:true devel:true*/
+const readline = require('readline');
 
-var GuaranteedPublisher = function (topicName) {
+function askMessage() {
+    return new Promise((resolve) => {
+        const rl = readline.createInterface({
+            input: process.stdin,
+            output: process.stdout
+        });
+
+        rl.question('메시지를 입력하세요: ', (messageText) => {
+            rl.close();
+            resolve(messageText);  // 여기서 Promise를 해결
+        });
+    });
+}
+
+var TopicPublisher = function (solaceModule, topicName) {
     'use strict';
+    var solace = solaceModule;
     var publisher = {};
     publisher.session = null;
     publisher.topicName = topicName;
@@ -36,10 +51,12 @@ var GuaranteedPublisher = function (topicName) {
     publisher.log = function (line) {
         var now = new Date();
         var time = [('0' + now.getHours()).slice(-2), ('0' + now.getMinutes()).slice(-2),
-            ('0' + now.getSeconds()).slice(-2)];
+        ('0' + now.getSeconds()).slice(-2)];
         var timestamp = '[' + time.join(':') + '] ';
         console.log(timestamp + line);
     };
+
+    publisher.log('\n*** Publisher to topic "' + publisher.topicName + '" is ready to connect ***');
 
     // main function
     publisher.run = function (argv) {
@@ -49,7 +66,7 @@ var GuaranteedPublisher = function (topicName) {
     // Establishes connection to Solace PubSub+ Event Broker
     publisher.connect = function (argv) {
         if (publisher.session !== null) {
-            publisher.log('Already connected and ready to publish messages.');
+            publisher.log('Already connected and ready to publish.');
             return;
         }
         // extract params
@@ -59,9 +76,6 @@ var GuaranteedPublisher = function (topicName) {
                 'Available protocols are ws://, wss://, http://, https://, tcp://, tcps://');
             process.exit();
         }
-
-        publisher.log('*** publisher to topic "' + publisher.topicName + '" is ready to connect ***');
-
         var hosturl = argv.slice(2)[0];
         publisher.log('Connecting to Solace PubSub+ Event Broker using url: ' + hosturl);
         var usernamevpn = argv.slice(3)[0];
@@ -70,26 +84,33 @@ var GuaranteedPublisher = function (topicName) {
         var vpn = usernamevpn.split('@')[1];
         publisher.log('Solace PubSub+ Event Broker VPN name: ' + vpn);
         var pass = argv.slice(4)[0];
-
         // create session
         try {
             publisher.session = solace.SolclientFactory.createSession({
                 // solace.SessionProperties
-                url:      hosturl,
-                vpnName:  vpn,
+                url: hosturl,
+                vpnName: vpn,
                 userName: username,
                 password: pass,
-                publisherProperties: {
-                  acknowledgeMode: solace.MessagePublisherAcknowledgeMode.PER_MESSAGE,
-              }          
             });
         } catch (error) {
             publisher.log(error.toString());
         }
         // define session event listeners
         publisher.session.on(solace.SessionEventCode.UP_NOTICE, function (sessionEvent) {
+            async function mainLoop() {
+                while (true) {
+                    var messageText = await askMessage();
+                    messageText = num + messageText;
+                    publisher.publish(messageText);
+                    if (messageText === 'exit') {
+                        break; // exit the loop if the user types 'exit'
+                    }
+                }
+                publisher.exit();
+            }
             publisher.log('=== Successfully connected and ready to publish messages. ===');
-            publisher.publish();
+            mainLoop()
         });
         publisher.session.on(solace.SessionEventCode.CONNECT_FAILED_ERROR, function (sessionEvent) {
             publisher.log('Connection failed to the message router: ' + sessionEvent.infoStr +
@@ -102,23 +123,7 @@ var GuaranteedPublisher = function (topicName) {
                 publisher.session = null;
             }
         });
-        publisher.session.on(solace.SessionEventCode.ACKNOWLEDGED_MESSAGE, function (sessionEvent) {
-            publisher.log('Delivery of message to PubSub+ Broker with correlation key = ' +
-                sessionEvent.correlationKey.id + ' confirmed.');
-            publisher.exit();
-        });
-        publisher.session.on(solace.SessionEventCode.REJECTED_MESSAGE_ERROR, function (sessionEvent) {
-            publisher.log('Delivery of message to PubSub+ Broker with correlation key = ' +
-                sessionEvent.correlationKey.id + ' rejected, info: ' + sessionEvent.infoStr);
-            publisher.exit();
-        });
-
-        publisher.connectToSolace();   
-
-    };
-
-    // Actually connects the session triggered when the iframe has been loaded - see in html code
-    publisher.connectToSolace = function () {
+        // connect the session
         try {
             publisher.session.connect();
         } catch (error) {
@@ -126,37 +131,27 @@ var GuaranteedPublisher = function (topicName) {
         }
     };
 
-    // Publish one message
-    publisher.publish = function () {
+    // Publishes one message
+    publisher.publish = function (messageText) {
         if (publisher.session !== null) {
-            var messageText = 'Sample Message';
             var message = solace.SolclientFactory.createMessage();
+            message.setDestination(solace.SolclientFactory.createTopicDestination(publisher.topicName));
             message.setBinaryAttachment(messageText);
-            message.setDeliveryMode(solace.MessageDeliveryModeType.PERSISTENT);
-            // OPTIONAL: You can set a correlation key on the message and check for the correlation
-            // in the ACKNOWLEDGE_MESSAGE callback. Define a correlation key object
-            const correlationKey = {
-                name: "MESSAGE_CORRELATIONKEY",
-                id: Date.now()
-            };
-            message.setCorrelationKey(correlationKey);
-            publisher.log('Publishing message "' + messageText + '" to topic "' + publisher.topicName + '/' + correlationKey.id + '"...');
-            message.setDestination(solace.SolclientFactory.createTopicDestination(publisher.topicName + '/' + correlationKey.id));
-
+            message.setDeliveryMode(solace.MessageDeliveryModeType.DIRECT);
+            publisher.log('Publishing message "' + messageText + '" to topic "' + publisher.topicName + '"...');
             try {
-                // Delivery not yet confirmed. See ConfirmedPublish.js
                 publisher.session.send(message);
-                publisher.log('Message sent with correlation key: ' + correlationKey.id);
+                publisher.log('Message published.');
             } catch (error) {
                 publisher.log(error.toString());
             }
         } else {
-            publisher.log('Cannot publish messages because not connected to Solace PubSub+ Event Broker.');
+            publisher.log('Cannot publish because not connected to Solace PubSub+ Event Broker.');
         }
     };
 
     publisher.exit = function () {
-      publisher.disconnect();
+        publisher.disconnect();
         setTimeout(function () {
             process.exit();
         }, 1000); // wait for 1 second to finish
@@ -179,7 +174,6 @@ var GuaranteedPublisher = function (topicName) {
     return publisher;
 };
 
-
 var solace = require('solclientjs').debug; // logging supported
 
 // Initialize factory with the most recent API defaults
@@ -190,8 +184,8 @@ solace.SolclientFactory.init(factoryProps);
 // enable logging to JavaScript console at WARN level
 // NOTICE: works only with ('solclientjs').debug
 solace.SolclientFactory.setLogLevel(solace.LogLevel.WARN);
+var publisher = new TopicPublisher(solace, 'cbum');
 
-// create the publisher, specifying the name of the destination topic
-var publisher = new GuaranteedPublisher('tutorialssss');
-// send message to Solace PubSub+ Event Broker
+// create the publisher, specifying the name of the subscription topic
+
 publisher.run(process.argv);

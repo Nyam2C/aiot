@@ -220,7 +220,7 @@ solace.SolclientFactory.init(factoryProps);
 solace.SolclientFactory.setLogLevel(solace.LogLevel.WARN);
 
 // create the producer, specifying the name of the destination queue
-var producer = new QueueProducer(solace, 'tutorial/queue');
+var producer = new QueueProducer(solace, 'Q.TAEHYUN2');
 
 // send message to Solace PubSub+ Event Broker
 producer.run(process.argv);

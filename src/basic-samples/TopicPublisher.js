@@ -109,7 +109,7 @@ var TopicPublisher = function (solaceModule, topicName) {
     // Publishes one message
     publisher.publish = function () {
         if (publisher.session !== null) {
-            var messageText = 'Sample Message';
+            var messageText = 'CHRIS BUMSTEAD';
             var message = solace.SolclientFactory.createMessage();
             message.setDestination(solace.SolclientFactory.createTopicDestination(publisher.topicName));
             message.setBinaryAttachment(messageText);
@@ -162,7 +162,7 @@ solace.SolclientFactory.init(factoryProps);
 solace.SolclientFactory.setLogLevel(solace.LogLevel.WARN);
 
 // create the publisher, specifying the name of the subscription topic
-var publisher = new TopicPublisher(solace, 'tutorial/topic');
+var publisher = new TopicPublisher(solace, 'cbum/king');
 
 // publish message to Solace PubSub+ Event Broker
 publisher.run(process.argv);

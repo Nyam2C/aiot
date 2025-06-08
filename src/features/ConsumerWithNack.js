@@ -188,7 +188,7 @@ var ConsumerWithNack = function (solaceModule, queueName) {
                             let messageSettlementOutcome = solace.MessageOutcome.ACCEPTED; // default
 
                             if(consumer.settlementOutcome === 'any') {
-                                const outcomes = [
+                                const outcomes = [  
                                     solace.MessageOutcome.ACCEPTED,
                                     solace.MessageOutcome.FAILED,
                                     solace.MessageOutcome.REJECTED
