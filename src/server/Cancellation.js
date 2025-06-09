@@ -1,7 +1,10 @@
+const CancelNotification = require('./CancelNotification');
+
 var Cancellation = function (solaceModule, queueName, topicName) {
     'use strict';
     var solace = solaceModule;
     var subscriber = {};
+    var argvs;
     subscriber.session = null;
     subscriber.flow = null;
     subscriber.queueName = queueName;
@@ -15,13 +18,12 @@ var Cancellation = function (solaceModule, queueName, topicName) {
         var time = [('0' + now.getHours()).slice(-2), ('0' + now.getMinutes()).slice(-2),
             ('0' + now.getSeconds()).slice(-2)];
         var timestamp = '[' + time.join(':') + '] ';
-        console.log(timestamp + line);
+        console.log(timestamp + "[취소] " + line);
     };
-
-    subscriber.log('*** Consumer to queue "' + subscriber.queueName + '" is ready to connect ***');
 
     // main function
     subscriber.run = function (argv) {
+        argvs = argv;
         subscriber.connect(argv);
     };
 
@@ -63,7 +65,7 @@ var Cancellation = function (solaceModule, queueName, topicName) {
 
         // define session event listeners
         subscriber.session.on(solace.SessionEventCode.UP_NOTICE, function (sessionEvent) {
-            subscriber.log('=== Successfully connected and ready to start the message subscriber. ===');
+            subscriber.log('연결 성공');
             subscriber.startConsume();
         });
         subscriber.session.on(solace.SessionEventCode.CONNECT_FAILED_ERROR, function (sessionEvent) {
@@ -108,7 +110,7 @@ var Cancellation = function (solaceModule, queueName, topicName) {
                     subscriber.messageSubscriber.on(solace.MessageConsumerEventName.UP, function () {
                         subscriber.subscribe();
                         subscriber.consuming = true;
-                        subscriber.log('=== Ready to receive messages. ===');
+                        subscriber.log('수신 대기');
                     });
                     subscriber.messageSubscriber.on(solace.MessageConsumerEventName.CONNECT_FAILED_ERROR, function () {
                         subscriber.consuming = false;
@@ -134,7 +136,7 @@ var Cancellation = function (solaceModule, queueName, topicName) {
                       } else {
                         subscriber.subscribed = true;
                         subscriber.log('Successfully subscribed to topic: ' + sessionEvent.correlationKey);
-                        subscriber.log('=== Ready to receive messages. ===');
+                        subscriber.log('수신 대기');
                       }
                     });
                     // Define message received event listener
@@ -142,6 +144,8 @@ var Cancellation = function (solaceModule, queueName, topicName) {
                         subscriber.log('Received message: "' + message.getBinaryAttachment() + '",' +
                             ' details:\n' + message.dump());
                         // Need to explicitly ack otherwise it will not be deleted from the message router
+                        var CancelNotification = new CancelNotification(solace,'Ticket/cancellation/123/>');
+                        CancelNotification.run(argvs);
                         message.acknowledge();
                     });
                     // Connect the message subscriber

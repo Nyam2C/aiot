@@ -11,13 +11,13 @@ solace.SolclientFactory.init(factoryProps);
 
 solace.SolclientFactory.setLogLevel(solace.LogLevel.WARN);
 
-var cancellation = new Cancellation(solace, 'CBUM','Ticket/reservation>');
+var cancellation = new Cancellation(solace, 'CBUM','Ticket/cancellation/123/>');
 cancellation.run(process.argv);
 
-var info = new Info(solace, 'CBUM','Ticket/info>');
+var info = new Info(solace, 'CBUM','Ticket/info/>');
 info.run(process.argv);
 
-var reservation = new Reservation(solace, 'CBUM','Ticket/cancellation>');
+var reservation = new Reservation(solace, 'CBUM','Ticket/reservation/>');
 reservation.run(process.argv);
 
 
