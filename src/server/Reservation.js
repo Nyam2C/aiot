@@ -1,3 +1,79 @@
+const dummyData = [
+  {
+    show: "PSY",
+    locations: [
+      {
+        location: "Seoul",
+        dates: [
+          {
+            date: "20250610",
+            sessions: [
+              { session: 1, seats: ["G10", "G11", "G12"] },
+              { session: 2, seats: ["A01", "A02"] },
+            ],
+          },
+          {
+            date: "20250611",
+            sessions: [
+              { session: 1, seats: ["B05", "B06"] },
+            ],
+          },
+        ],
+      },
+      {
+        location: "Busan",
+        dates: [
+          {
+            date: "20250612",
+            sessions: [
+              { session: 1, seats: ["C10", "C11"] },
+              { session: 2, seats: ["D01"] },
+            ],
+          },
+        ],
+      },
+    ],
+  },
+  {
+    show: "BTS",
+    locations: [
+      {
+        location: "Seoul",
+        dates: [
+          {
+            date: "20250612",
+            sessions: [
+              { session: 1, seats: ["E20", "E21"] },
+            ],
+          },
+          {
+            date: "20250613",
+            sessions: [
+              { session: 2, seats: ["F05"] },
+            ],
+          },
+        ],
+      },
+    ],
+  },
+  {
+    show: "IU",
+    locations: [
+      {
+        location: "Incheon",
+        dates: [
+          {
+            date: "20250614",
+            sessions: [
+              { session: 1, seats: ["G07", "G08"] },
+            ],
+          },
+        ],
+      },
+    ],
+  },
+];
+
 var Reservation = function (solaceModule, queueName, topicName) {
     'use strict';
     var solace = solaceModule;
