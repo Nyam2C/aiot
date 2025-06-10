@@ -6,12 +6,16 @@ const rl = readline.createInterface({
   output: process.stdout
 });
 
+function questionAsync(query) {
+  return new Promise(resolve => rl.question(query, resolve));
+}
+
 function login(callback) {
-    console.log('아이디를 입력하세요:');
-    rl.question('> 아이디: ', (id) => {
-        console.log(`로그인 성공: ${id}`);
-        callback();
-    });
+  console.log('아이디를 입력하세요:');
+  rl.question('> 아이디: ', (id) => {
+    console.log(`로그인 성공: ${id}`);
+    callback();
+  });
 
 }
 
@@ -19,17 +23,22 @@ function showMenu() {
   console.log('\n무엇을 하시겠습니까?');
   console.log('1. 예약하기');
   console.log('2. 예약 정보 조회');
-  console.log('3. 예약 취소하기');5
+  console.log('3. 예약 취소하기'); 5
   console.log('4. 알람 설정');
   console.log('5. 종료하기');
 }
 
-function handleInput(answer) {
+async function handleInput(answer) {
   switch (answer.trim()) {
     case '1':
       console.log('▶ 예약하기 로직 실행');
-      var getInfoInstance = getInfo(solace, 'Ticket/info/123');
-      getInfoInstance.run(process.argv);
+      var info_topic = 'Ticket/infos/';
+      while (true) {
+        var getInfoInstance = getInfo(solace, info_topic+'?');
+        getInfoInstance.run(process.argv);
+        const id = await questionAsync('입력: ');
+        info_topic = info_topic + id + '/';
+      }
       break;
     case '2':
       console.log('▶ 예약 정보 조회 로직 실행');
@@ -58,7 +67,7 @@ function promptMenu() {
   rl.question('> 선택: ', handleInput);
 }
 
-var solace = require('solclientjs').debug; 
+var solace = require('solclientjs').debug;
 
 var factoryProps = new solace.SolclientFactoryProperties();
 factoryProps.profile = solace.SolclientFactoryProfiles.version10;

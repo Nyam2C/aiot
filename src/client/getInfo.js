@@ -108,8 +108,7 @@ var getInfo = function (solaceModule, topicName) {
 
     // Callback for replies
     requestor.replyReceivedCb = function (session, message) {
-        requestor.log('Received reply: "' + message.getSdtContainer().getValue() + '"' +
-            ' details:\n' + message.dump());
+        requestor.log('Received reply: "' + "[" + message.getSdtContainer().getValue() + "]");
         requestor.exit();
     };
 
@@ -135,9 +134,7 @@ var getInfo = function (solaceModule, topicName) {
 
     requestor.exit = function () {
         requestor.disconnect();
-        setTimeout(function () {
-            process.exit();
-        }, 1000); // wait for 1 second to disconnect
+        return;
     };
 
     return requestor;

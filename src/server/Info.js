@@ -1,3 +1,136 @@
+const dummyData = [
+  {
+    show: "PSY",
+    locations: [
+      {
+        location: "Seoul",
+        dates: [
+          {
+            date: "20250610",
+            sessions: [
+              { session: 1, seats: ["G10", "G11", "G12"] },
+              { session: 2, seats: ["A01", "A02"] },
+            ],
+          },
+          {
+            date: "20250611",
+            sessions: [
+              { session: 1, seats: ["B05", "B06"] },
+            ],
+          },
+        ],
+      },
+      {
+        location: "Busan",
+        dates: [
+          {
+            date: "20250612",
+            sessions: [
+              { session: 1, seats: ["C10", "C11"] },
+              { session: 2, seats: ["D01"] },
+            ],
+          },
+        ],
+      },
+    ],
+  },
+  {
+    show: "BTS",
+    locations: [
+      {
+        location: "Seoul",
+        dates: [
+          {
+            date: "20250612",
+            sessions: [
+              { session: 1, seats: ["E20", "E21"] },
+            ],
+          },
+          {
+            date: "20250613",
+            sessions: [
+              { session: 2, seats: ["F05"] },
+            ],
+          },
+        ],
+      },
+    ],
+  },
+  {
+    show: "IU",
+    locations: [
+      {
+        location: "Incheon",
+        dates: [
+          {
+            date: "20250614",
+            sessions: [
+              { session: 1, seats: ["G07", "G08"] },
+            ],
+          },
+        ],
+      },
+    ],
+  },
+];
+
+function parseTopicToParams(topic) {
+  // "Ticket/infos/PSY/Seoul/20250610/1/G10" → [PSY, Seoul, 20250610, 1, G10]
+  const parts = topic.split('/');
+  // 앞의 "Ticket/infos" 제거
+  const params = parts.slice(2);
+  return {
+    show: params[0],
+    location: params[1],
+    date: params[2],
+    session: params[3],
+    seat: params[4]
+  };
+}
+
+function findAndPrintReservationFromTopic(topic) {
+  const { show, location, date, session, seat } = parseTopicToParams(topic);
+  console.log(`show: ${show}, location: ${location}, date: ${date}, session: ${session}, seat: ${seat}`);
+  let shows = dummyData;
+
+  if (show) {
+    shows = shows.filter(item => item.show === show);
+    if (shows.length === 0) return "";
+  } else {
+    return shows.map(item => item.show).join(" ");
+  }
+
+  if (location) {
+    shows = shows.flatMap(item => item.locations.filter(loc => loc.location === location));
+    if (shows.length === 0) return "";
+  } else {
+    return shows[0].locations.map(loc => loc.location).join(" ");
+  }
+
+  if (date) {
+    shows = shows.flatMap(loc => loc.dates.filter(d => d.date === date));
+    if (shows.length === 0) return "";
+  } else {
+    return shows[0].dates.map(d => d.date).join(" ");
+  }
+
+  if (session) {
+    shows = shows.flatMap(d => d.sessions.filter(s => s.session === session));
+    if (shows.length === 0) return "";
+  } else {
+    return shows[0].sessions.map(s => s.session).join(" ");
+  }
+
+  if (seat) {
+    const found = shows.some(s => s.seats.includes(seat));
+    if (!found) return "";
+    return seat;
+  } else {
+    return shows[0].seats.join(" ");
+  }
+}
+
+
 var Info = function (solaceModule, topicName) {
     'use strict';
     var solace = solaceModule;
@@ -149,9 +282,9 @@ var Info = function (solaceModule, topicName) {
         replier.log('Replying...');
         if (replier.session !== null) {
             var reply = solace.SolclientFactory.createMessage();
-            var sdtContainer = message.getSdtContainer();
+            var sdtContainer = message.getSdtContainer(replier.topicName);
             if (sdtContainer.getType() === solace.SDTFieldType.STRING) {
-                var replyText = message.getSdtContainer().getValue() + " - Sample Reply";
+                var replyText = findAndPrintReservationFromTopic(message.dump().Destination);
                 reply.setSdtContainer(solace.SDTField.create(solace.SDTFieldType.STRING, replyText));
                 replier.session.sendReply(message, reply);
                 replier.log('Replied.');

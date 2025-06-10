@@ -14,7 +14,7 @@ solace.SolclientFactory.setLogLevel(solace.LogLevel.WARN);
 var cancellation = new Cancellation(solace, 'CBUM','Ticket/cancellation/123/>');
 cancellation.run(process.argv);
 
-var info = new Info(solace, 'Ticket/info/>');
+var info = new Info(solace, 'Ticket/infos/>');
 info.run(process.argv);
 
 var reservation = new Reservation(solace, 'CBUM','Ticket/reservation/>');

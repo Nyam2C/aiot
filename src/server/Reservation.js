@@ -74,6 +74,79 @@ const dummyData = [
   },
 ];
 
+function findAndPrintReservation({ show, location, date, session, seat }) {
+  let shows = dummyData;
+
+  // 1. show
+  if (show) {
+    shows = shows.filter(item => item.show === show);
+    if (shows.length === 0) {
+      console.log(`Show "${show}" not found.`);
+      return;
+    }
+  } else {
+    // show가 없으면 전체 show 목록 출력
+    console.log('shows:', shows.map(item => item.show));
+    return;
+  }
+
+  // 2. location
+  if (location) {
+    shows = shows.flatMap(item => item.locations.filter(loc => loc.location === location));
+    if (shows.length === 0) {
+      console.log(`Location "${location}" not found for show "${show}".`);
+      return;
+    }
+  } else {
+    // location이 없으면 해당 show의 location 목록 출력
+    console.log('locations:', shows[0].locations.map(loc => loc.location));
+    return;
+  }
+
+  // 3. date
+  if (date) {
+    shows = shows.flatMap(loc => loc.dates.filter(d => d.date === date));
+    if (shows.length === 0) {
+      console.log(`Date "${date}" not found for location "${location}".`);
+      return;
+    }
+  } else {
+    // date가 없으면 해당 location의 date 목록 출력
+    console.log('dates:', shows[0].dates.map(d => d.date));
+    return;
+  }
+
+  // 4. session
+  if (session) {
+    shows = shows.flatMap(d => d.sessions.filter(s => s.session === session));
+    if (shows.length === 0) {
+      console.log(`Session "${session}" not found for date "${date}".`);
+      return;
+    }
+  } else {
+    // session이 없으면 해당 date의 session 목록 출력
+    console.log('sessions:', shows[0].sessions.map(s => s.session));
+    return;
+  }
+
+  // 5. seat
+  if (seat) {
+    const found = shows.some(s => s.seats.includes(seat));
+    if (!found) {
+      console.log(`Seat "${seat}" not found for session "${session}".`);
+      return;
+    }
+    // 좌석이 있으면 해당 좌석만 출력
+    console.log('seat:', seat);
+    return;
+  } else {
+    // seat이 없으면 해당 session의 좌석 목록 출력
+    console.log('seats:', shows[0].seats);
+    return;
+  }
+}
+
+
 var Reservation = function (solaceModule, queueName, topicName) {
     'use strict';
     var solace = solaceModule;
